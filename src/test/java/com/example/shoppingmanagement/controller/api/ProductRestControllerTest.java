@@ -4,6 +4,7 @@ import com.example.shoppingmanagement.model.dto.ProductDto;
 import com.example.shoppingmanagement.model.product.ProductSize;
 import com.example.shoppingmanagement.model.product.ProductStatus;
 import com.example.shoppingmanagement.model.product.ProductType;
+import com.example.shoppingmanagement.service.OrderService;
 import com.example.shoppingmanagement.service.ProductService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +37,9 @@ class ProductRestControllerTest {
 
     @MockBean
     private ProductService productService;
+
+    @MockBean
+    private OrderService orderService;
 
     @Autowired
     private ProductRestController productRestController;
