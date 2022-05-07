@@ -58,4 +58,22 @@ class OrderServiceTest {
         assertThrows(OrderException.class, () ->
                 orderService.createOrder(new Email("test@gmail.com"), "    ", "12345", orderItems));
     }
+
+    @Test
+    @DisplayName("전체 주문을 조회한다.")
+    void getAllOrders() {
+        ProductDto productDto = new ProductDto(ProductType.TOPS, "test", 30000,
+                "this is test product", "testiee", ProductSize.M, ProductStatus.IN_STOCK);
+        Product product = productService.createProduct(productDto);
+
+        List<OrderItem> orderItems = List.of(new OrderItem(product.getProductId(), product.getProductType(),
+                product.getPrice(), 3));
+
+        Order order = orderService.createOrder(new Email("test@gmail.com"), "test street 23", "12345", orderItems);
+
+        List<Order> orders = orderService.getAllOrders();
+
+        assertThat(orders.size()).isGreaterThan(1);
+        assertThat(orders.stream().filter(o -> o.getOrderId().equals(order.getOrderId())).findAny()).isNotEmpty();
+    }
 }

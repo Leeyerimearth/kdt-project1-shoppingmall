@@ -5,10 +5,9 @@ import com.example.shoppingmanagement.model.Order;
 import com.example.shoppingmanagement.model.dto.OrderDto;
 import com.example.shoppingmanagement.service.OrderService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class OrderRestController {
@@ -23,5 +22,12 @@ public class OrderRestController {
     public ResponseEntity<Order> createOrder(@RequestBody OrderDto orderDto) {
         Order order = orderService.createOrder(new Email(orderDto.email()), orderDto.address(), orderDto.postcode(), orderDto.orderItems());
         return ResponseEntity.ok().body(order);
+    }
+
+    @GetMapping("/api/v1/orders")
+    @ResponseBody
+    public ResponseEntity<List<Order>> getAllOrders() {
+        List<Order> orders = orderService.getAllOrders();
+        return ResponseEntity.ok().body(orders);
     }
 }

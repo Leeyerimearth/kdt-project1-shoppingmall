@@ -47,4 +47,26 @@ class OrderJdbcRepositoryTest {
         Optional<Order> resultOrder = orderJdbcRepository.insert(order);
         assertThat(resultOrder.get()).isSameAs(order);
     }
+
+    @Test
+    @DisplayName("전체 주문을 가져온다.")
+    void findAll() {
+        Product product
+                = new Product(UUID.randomUUID(), ProductType.TOPS, "test", 30000,
+                "this is test Item", "testiee", ProductSize.M, ProductStatus.IN_STOCK);
+        Product resultProduct = productJdbcRepository.insert(product).get();
+
+        List<OrderItem> orderItems = List.of(new OrderItem(resultProduct.getProductId(), resultProduct.getProductType(),
+                resultProduct.getPrice(), 3), new OrderItem(resultProduct.getProductId(), resultProduct.getProductType(),
+                resultProduct.getPrice(), 4)) ;
+
+        Order order = new Order(UUID.randomUUID(), new Email("test@gmail.com"), "test street 23",
+                "12344", orderItems, OrderStatus.ACCEPTED, LocalDateTime.now(), LocalDateTime.now());
+        orderJdbcRepository.insert(order);
+
+        List<Order> orders = orderJdbcRepository.findAll();
+
+        assertThat(orders).size().isGreaterThan(1);
+        assertThat(orders.stream().filter(o -> o.getOrderId().equals(order.getOrderId())).findAny()).isNotEmpty();
+    }
 }

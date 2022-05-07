@@ -18,7 +18,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest
@@ -51,6 +52,14 @@ class OrderRestControllerTest {
                         .content(content)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("전체 주문을 정상적으로 조회힌다.")
+    void getAllOrders() throws Exception {
+        mockMvc.perform(get("/api/v1/orders"))
+                .andExpect(status().isOk())
+                .andDo(print()); // 통합테스트처럼 service단도 다 수행해서 test 해야하는건지?
     }
 
 }

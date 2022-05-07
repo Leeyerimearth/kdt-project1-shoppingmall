@@ -1,16 +1,21 @@
 package com.example.shoppingmanagement.repository;
 
+import com.example.shoppingmanagement.model.Email;
 import com.example.shoppingmanagement.model.Order;
 import com.example.shoppingmanagement.model.OrderItem;
+import com.example.shoppingmanagement.model.OrderStatus;
+import com.example.shoppingmanagement.model.dto.OrderItemMapper;
+import com.example.shoppingmanagement.model.dto.OrderMapper;
+import com.example.shoppingmanagement.model.product.ProductType;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.ByteBuffer;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public class OrderJdbcRepository {
@@ -32,10 +37,65 @@ public class OrderJdbcRepository {
                                     "VALUES (UUID_TO_BIN(:orderId), UUID_TO_BIN(:productId), :productType, :price, :quantity, :createdAt, :updatedAt) ",
                             toOrderTimeParamMap(order.getOrderId(), order.getCreatedAt(), order.getUpdatedAt(), item));
                 });
-        if(result != 1) {
+        if (result != 1) {
             return Optional.empty();
         }
         return Optional.of(order);
+    }
+
+    @Transactional
+    public List<Order> findAll() {
+        List<OrderMapper> orderMappers = jdbcTemplate.query("SELECT * FROM orders ", orderRowMapper);
+        List<OrderItemMapper> orderItemMappers = jdbcTemplate.query("SELECT * FROM order_items", orderItemRowMapper);
+
+        List<Order> orders = new ArrayList<>();
+        orderMappers.forEach(orderMapper -> {
+            List<OrderItem> orderItems = new ArrayList<>();
+            orderItemMappers.forEach(orderItemMapper -> {
+                if (orderItemMapper.orderId().equals(orderMapper.orderId())) {
+                    OrderItem orderItem = new OrderItem(orderItemMapper.productId(), orderItemMapper.productType(),
+                            orderItemMapper.price(), orderItemMapper.quantity());
+                    orderItems.add(orderItem);
+                }
+            });
+            var order = new Order(orderMapper.orderId(), orderMapper.email(), orderMapper.address(), orderMapper.postcode(),
+                    orderItems, orderMapper.orderStatus(), orderMapper.createdAt(), orderMapper.updatedAt());
+            orders.add(order);
+        });
+
+        return orders;
+    }
+
+    private RowMapper<OrderMapper> orderRowMapper = (resultSet, rowNum) -> {
+        var orderId = toUUID(resultSet.getBytes("order_id"));
+        var email = new Email(resultSet.getString("email"));
+        var address = resultSet.getString("address");
+        var postcode = resultSet.getString("postcode");
+        var orderStatus = OrderStatus.valueOf(resultSet.getString("order_status"));
+        var createdAt = toLocalDateTime(resultSet.getTimestamp("created_at"));
+        var updatedAt = toLocalDateTime(resultSet.getTimestamp("updated_at"));
+        return new OrderMapper(orderId, email, address, postcode, orderStatus, createdAt, updatedAt);
+    };
+
+    private RowMapper<OrderItemMapper> orderItemRowMapper = (resultSet, rowNum) -> {
+        var orderId = toUUID(resultSet.getBytes("order_id"));
+        var productId = toUUID(resultSet.getBytes("product_id"));
+        var productType = ProductType.valueOf(resultSet.getString("product_type"));
+        var price = resultSet.getLong("price");
+        var quantity = resultSet.getInt("quantity");
+
+        return new OrderItemMapper(orderId, productId, productType, price, quantity);
+    };
+
+    private UUID toUUID(byte[] bytes) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        long firstLong = byteBuffer.getLong();
+        long secondLong = byteBuffer.getLong();
+        return new UUID(firstLong, secondLong);
+    }
+
+    private LocalDateTime toLocalDateTime(Timestamp timestamp) {
+        return timestamp != null ? timestamp.toLocalDateTime() : null;
     }
 
     private Map<String, Object> toOrderParamMap(Order order) {
@@ -61,6 +121,4 @@ public class OrderJdbcRepository {
         paramMap.put("updatedAt", updatedAt);
         return paramMap;
     }
-
-
 }

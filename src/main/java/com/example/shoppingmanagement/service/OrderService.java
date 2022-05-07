@@ -28,4 +28,7 @@ public class OrderService {
         return returnOrder.get();
     }
 
+    public List<Order> getAllOrders() {
+        return orderJdbcRepository.findAll();
+    }
 }
