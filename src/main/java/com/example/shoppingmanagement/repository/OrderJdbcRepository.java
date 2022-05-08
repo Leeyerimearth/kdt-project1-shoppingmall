@@ -66,6 +66,46 @@ public class OrderJdbcRepository {
         return orders;
     }
 
+    public Optional<Order> updateOrderStatus(UUID orderId, OrderStatus changeStatus) {
+        LocalDateTime updatedAt = LocalDateTime.now();
+        var paramMap = new HashMap<String, Object>() {{
+            put("orderStatus", changeStatus.toString());
+            put("orderId", orderId.toString().getBytes());
+            put("updatedAt", updatedAt);
+        }};
+        int update = jdbcTemplate.update("UPDATE orders SET order_status = :orderStatus, updated_at = :updatedAt WHERE order_id = UUID_TO_BIN(:orderId)", paramMap);
+        if (update != 1) {
+            return Optional.empty();
+        }
+        return findById(orderId);
+    }
+
+    public Optional<Order> findById(UUID orderId) {
+        var paramMap = new HashMap<String, Object>() {{
+            put("orderId", orderId.toString().getBytes());
+        }};
+        OrderMapper orderMapper;
+        List<OrderItemMapper> orderItemMappers;
+        List<OrderItem> orderItems = new ArrayList<>();
+        try {
+            orderMapper = jdbcTemplate.queryForObject("SELECT * FROM orders WHERE order_id = UUID_TO_BIN(:orderId)", paramMap, orderRowMapper);
+            orderItemMappers = jdbcTemplate.query("SELECT * FROM order_items WHERE order_id = UUID_TO_BIN(:orderId)", paramMap, orderItemRowMapper);
+
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+
+        orderItemMappers.forEach(orderItemMapper -> {
+            OrderItem orderItem = new OrderItem(orderItemMapper.productId(), orderItemMapper.productType(),
+                    orderItemMapper.price(), orderItemMapper.quantity());
+            orderItems.add(orderItem);
+        });
+        Order order = new Order(orderMapper.orderId(), orderMapper.email(), orderMapper.address(),
+                orderMapper.postcode(), orderItems, orderMapper.orderStatus(), orderMapper.createdAt(), orderMapper.updatedAt());
+        return Optional.of(order);
+    }
+
+
     private RowMapper<OrderMapper> orderRowMapper = (resultSet, rowNum) -> {
         var orderId = toUUID(resultSet.getBytes("order_id"));
         var email = new Email(resultSet.getString("email"));

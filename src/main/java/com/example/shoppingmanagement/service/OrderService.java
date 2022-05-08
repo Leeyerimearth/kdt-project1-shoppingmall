@@ -31,4 +31,16 @@ public class OrderService {
     public List<Order> getAllOrders() {
         return orderJdbcRepository.findAll();
     }
+
+    public Order changeOrderStatus(String orderId, OrderStatus changeStatus) {
+        Optional<Order> updatedOrder = orderJdbcRepository.updateOrderStatus(UUID.fromString(orderId), changeStatus);
+        updatedOrder.orElseThrow(() -> new OrderException("상태가 변경되지 않았습니다."));
+        return updatedOrder.get();
+    }
+
+    public Order getOrderById(String orderId) {
+        Optional<Order> order = orderJdbcRepository.findById(UUID.fromString(orderId));
+        order.orElseThrow(() -> new OrderException(orderId + " 에 해당하는 order정보가 없습니다."));
+        return order.get();
+    }
 }

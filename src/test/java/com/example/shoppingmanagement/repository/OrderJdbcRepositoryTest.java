@@ -69,4 +69,51 @@ class OrderJdbcRepositoryTest {
         assertThat(orders).size().isGreaterThan(1);
         assertThat(orders.stream().filter(o -> o.getOrderId().equals(order.getOrderId())).findAny()).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("orderId로 order를 가져온다.")
+    void findOrderById() {
+        Product product
+                = new Product(UUID.randomUUID(), ProductType.TOPS, "test", 30000,
+                "this is test Item", "testiee", ProductSize.M, ProductStatus.IN_STOCK);
+        Product resultProduct = productJdbcRepository.insert(product).get();
+
+        List<OrderItem> orderItems = List.of(new OrderItem(resultProduct.getProductId(), resultProduct.getProductType(),
+                resultProduct.getPrice(), 3));
+
+        Order order = new Order(UUID.randomUUID(), new Email("test@gmail.com"), "test street 23",
+                "12344", orderItems, OrderStatus.ACCEPTED, LocalDateTime.now(), LocalDateTime.now());
+        orderJdbcRepository.insert(order);
+
+        Optional<Order> returnOrder = orderJdbcRepository.findById(order.getOrderId());
+        assertThat(returnOrder).isNotEmpty();
+        assertThat(returnOrder.get().getOrderId()).isEqualTo(order.getOrderId());
+    }
+
+    @Test
+    @DisplayName("없는 주문이면 optional empty가 반환된다.")
+    void findOrderByUnknownId() {
+        Optional<Order> returnOrder = orderJdbcRepository.findById(UUID.randomUUID());
+        assertThat(returnOrder).isEmpty();
+    }
+
+    @Test
+    @DisplayName("orderStatus를 정상적으로 update한다.")
+    void updateOrderStatus() {
+        Product product
+                = new Product(UUID.randomUUID(), ProductType.TOPS, "test", 30000,
+                "this is test Item", "testiee", ProductSize.M, ProductStatus.IN_STOCK);
+        Product resultProduct = productJdbcRepository.insert(product).get();
+
+        List<OrderItem> orderItems = List.of(new OrderItem(resultProduct.getProductId(), resultProduct.getProductType(),
+                resultProduct.getPrice(), 3));
+
+        Order order = new Order(UUID.randomUUID(), new Email("test@gmail.com"), "test street 23",
+                "12344", orderItems, OrderStatus.ACCEPTED, LocalDateTime.now(), LocalDateTime.now());
+        orderJdbcRepository.insert(order);
+
+        Optional<Order> returnOrder = orderJdbcRepository.updateOrderStatus(order.getOrderId(), OrderStatus.DELIVERY);
+        assertThat(returnOrder).isNotEmpty();
+        assertThat(returnOrder.get().getOrderStatus()).isEqualTo(OrderStatus.DELIVERY);
+    }
 }
