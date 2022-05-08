@@ -22,4 +22,9 @@ public class Email {
     public String getAddress() {
         return address;
     }
+
+    @Override
+    public String toString() {
+        return address;
+    }
 }
